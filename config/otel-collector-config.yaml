@@ -31,6 +31,23 @@ receivers:
             - target_label: docker_host
               replacement: "docker-portainer"
 
+        - job_name: pve-gabriel-carvalho
+          scrape_interval: 30s
+          metrics_path: /pve
+          params:
+            module: [default]
+            cluster: ["1"]
+            node: ["1"]
+          static_configs:
+            - targets: ["192.168.1.40"]   # Proxmox VE node
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: __param_target
+            - source_labels: [__param_target]
+              target_label: instance
+            - target_label: __address__
+              replacement: 192.168.1.13:9221   # pve-exporter
+
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
