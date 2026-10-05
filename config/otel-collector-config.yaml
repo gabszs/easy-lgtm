@@ -187,9 +187,6 @@ exporters:
     tls:
       insecure: true
 
-  otlp_http/lb:
-    endpoint: http://192.168.1.3:4358
-
 service:
   extensions:
     - health_check
@@ -204,7 +201,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [transform, batch]
-      exporters: [otlp_http/lb, otlp_grpc/tempo, otlp_http/grafana, otlp_http/hdx, forward]
+      exporters: [otlp_grpc/tempo, otlp_http/grafana, otlp_http/hdx, forward]
 
     traces/ollygarden:
       receivers: [forward]
@@ -219,7 +216,7 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp_http/lb, otlp_http/loki, otlp_http/grafana, otlp_http/hdx, forward]
+      exporters: [otlp_http/loki, otlp_http/grafana, otlp_http/hdx, forward]
 
     logs/ollygarden:
       receivers: [forward]
@@ -234,12 +231,12 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]   # resource/docker_host antes do batch
-      exporters: [otlp_http/lb, prometheus, otlp_http/ollygarden, otlp_http/hdx, otlp_http/grafana]
+      exporters: [prometheus, otlp_http/ollygarden, otlp_http/hdx, otlp_http/grafana]
 
     metrics/host-name:
       receivers: [docker_stats, prometheus]
       processors: [resource/docker_host, batch]   # resource/docker_host antes do batch
-      exporters: [otlp_http/lb, prometheus, otlp_http/ollygarden, otlp_http/hdx, otlp_http/grafana]
+      exporters: [prometheus, otlp_http/ollygarden, otlp_http/hdx, otlp_http/grafana]
 
     profiles:
       receivers: [otlp]
