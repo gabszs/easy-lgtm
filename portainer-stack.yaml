@@ -27,25 +27,25 @@ services:
       - --config=/etc/otel-collector-config.yaml
       - --feature-gates=service.profilesSupport,receiver.postgresql.separateSchemaAttr
 
-  alloy:
-    image: grafana/alloy:latest
-    container_name: alloy
-    restart: unless-stopped
-    env_file:
-      - stack.env
-    ports:
-      - 12345:12345
-      - 4517:4317
-      - 4518:4318
-    volumes:
-      - /root/easy-lgtm/config/alloy-config.yaml:/etc/alloy/config.alloy
-    command:
-      - run
-      - /etc/alloy/config.alloy
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --storage.path=/var/lib/alloy/data
-      - --cluster.node-name=${ALLOY_NODE_NAME}
-      - --stability.level=public-preview
+  # alloy:
+  #   image: grafana/alloy:latest
+  #   container_name: alloy
+  #   restart: unless-stopped
+  #   env_file:
+  #     - stack.env
+  #   ports:
+  #     - 12345:12345
+  #     - 4517:4317
+  #     - 4518:4318
+  #   volumes:
+  #     - /root/easy-lgtm/config/alloy-config.yaml:/etc/alloy/config.alloy
+  #   command:
+  #     - run
+  #     - /etc/alloy/config.alloy
+  #     - --server.http.listen-addr=0.0.0.0:12345
+  #     - --storage.path=/var/lib/alloy/data
+  #     - --cluster.node-name=${ALLOY_NODE_NAME}
+  #     - --stability.level=public-preview
 
   prometheus:
     image: prom/prometheus:latest
