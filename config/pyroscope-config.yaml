@@ -10,8 +10,12 @@ storage:
     # insecure: true
 
 metastore:
-  address: 127.0.0.1
+  address: 127.0.0.1:9095
   min_ready_duration: 1s
+  # raft/index state must live in the persistent volume
+  data_dir: /data/pyroscope/metastore/data
+  raft:
+    dir: /data/pyroscope/metastore/raft
 
 distributor:
   ring:
