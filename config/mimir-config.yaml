@@ -1,44 +1,61 @@
+# Mimir 3.2.x — monolithic, classic architecture (no Kafka), S3 (R2) backend.
+target: all,alertmanager,overrides-exporter
+
 server:
   http_listen_address: 0.0.0.0
   http_listen_port: 8080
+  log_level: warn
 
-target: all,alertmanager,overrides-exporter
-
-# Configure Mimir to use Minio as object storage backend.
 common:
   storage:
     backend: s3
     s3:
       endpoint: ${MIMIR_BUCKET_ENDPOINT}
+      bucket_name: ${MIMIR_BUCKET_NAME}
       access_key_id: ${MIMIR_ACCESS_KEY}
       secret_access_key: ${MIMIR_SECRET_KEY}
-      # insecure: true
-      bucket_name: ${MIMIR_BUCKET_NAME}
+      region: auto
 
-# Blocks storage requires a prefix when using a common object storage bucket.
+# Every component sharing the bucket needs its own prefix.
 blocks_storage:
   storage_prefix: blocks
   tsdb:
-    dir: /data/ingester
+    dir: /data/ingester # persisted by the mimir-data volume
+  bucket_store:
+    sync_dir: /data/tsdb-sync
 
-# Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
+alertmanager_storage:
+  storage_prefix: alertmanager
+
+ruler_storage:
+  storage_prefix: ruler
+
+compactor:
+  data_dir: /data/compactor
+
 memberlist:
-  bind_addr:
-    - 127.0.0.1
+  bind_addr: [127.0.0.1]
 
 ingester:
   ring:
     replication_factor: 1
 
+store_gateway:
+  sharding_ring:
+    replication_factor: 1
+
 ruler:
   rule_path: /data/ruler
-  alertmanager_url: http://alertmanager:8080/alertmanager
-  ring:
-    # Quickly detect unhealthy rulers to speed up the tutorial.
-    heartbeat_period: 2s
-    heartbeat_timeout: 10s
+  alertmanager_url: http://127.0.0.1:8080/alertmanager
 
-# alertmanager:
-#   data_dir: /data/alertmanager
-#   fallback_config_file: /etc/alertmanager-fallback-config.yaml
-#   external_url: http://alertmanager:9009/alertmanager
+alertmanager:
+  data_dir: /data/alertmanager
+  sharding_ring:
+    replication_factor: 1
+
+limits:
+  compactor_blocks_retention_period: 744h # 31d, same as Loki
+  max_global_series_per_user: 1500000
+
+usage_stats:
+  enabled: false

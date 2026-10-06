@@ -55,26 +55,27 @@ services:
       - 9090:9090
     volumes:
       - /root/easy-lgtm/config/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - prometheus-data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yaml
-      - --enable-feature=remote-write-receiver
+      - --web.enable-remote-write-receiver # Prometheus 3 dropped --enable-feature=remote-write-receiver
       - --enable-feature=exemplar-storage
-      - --enable-feature=native-histograms
 
   mimir:
-    image: grafana/mimir:latest
+    image: grafana/mimir:3.2.1
     container_name: mimir
     restart: unless-stopped
     env_file:
       - stack.env
     volumes:
       - /root/easy-lgtm/config/mimir-config.yaml:/etc/mimir.yaml
+      - mimir-data:/data
     command:
       - --config.file=/etc/mimir.yaml
       - --config.expand-env=true
 
   pyroscope:
-    image: grafana/pyroscope:latest
+    image: grafana/pyroscope:2.3.1
     container_name: pyroscope
     restart: unless-stopped
     user: "0:0"
@@ -91,7 +92,7 @@ services:
       - --config.expand-env=true
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.7.8
     container_name: grafana-loki
     restart: unless-stopped
     ports:
@@ -100,10 +101,11 @@ services:
       - stack.env
     volumes:
       - /root/easy-lgtm/config/loki-config.yaml:/etc/loki/config.yaml
-    command: -config.file=/etc/loki/local-config.yaml -config.expand-env=true
+      - loki-data:/loki
+    command: -config.file=/etc/loki/config.yaml -config.expand-env=true
 
   tempo:
-    image: grafana/tempo:2.8.2
+    image: grafana/tempo:3.1.0
     container_name: grafana-tempo
     restart: unless-stopped
     ports:
@@ -112,7 +114,8 @@ services:
       - stack.env
     volumes:
       - /root/easy-lgtm/config/tempo-config.yaml:/etc/tempo/tempo-config.yaml
-    command: -config.file=/etc/tempo/tempo-config.yaml -config.expand-env=true
+      - tempo-data:/var/tempo
+    command: -target=all -config.file=/etc/tempo/tempo-config.yaml -config.expand-env=true
 
   grafana:
     image: grafana/grafana:13.0
@@ -130,3 +133,6 @@ services:
 volumes:
   pyroscope-data:
   prometheus-data:
+  loki-data:
+  mimir-data:
+  tempo-data:

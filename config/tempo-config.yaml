@@ -1,7 +1,11 @@
----
+# Tempo 3.1.x — monolithic (target: all). No Kafka needed in monolithic mode:
+# the live-store replaces the 2.x ingester and the backend scheduler/worker
+# replace the compactor.
+stream_over_http_enabled: true
+
 server:
   http_listen_port: 3200
-  grpc_listen_port: 9096
+  log_level: info
 
 distributor:
   receivers:
@@ -12,21 +16,36 @@ distributor:
         http:
           endpoint: 0.0.0.0:4318
 
-ingester:
-  trace_idle_period: 10s       # espera 10s de inatividade antes de considerar o trace "finalizado"
-  max_block_duration: 30s      # envia blocos para o storage a cada 30s no máximo
-  flush_check_period: 5s       # checa a cada 5s se algum bloco precisa ser enviado
-  lifecycler:
-    address: 127.0.0.1
-    ring:
-      kvstore:
-        store: inmemory
-      replication_factor: 1
-    min_ready_duration: 1s
+# Retention (was compactor.compaction.block_retention in 2.x).
+backend_scheduler:
+  provider:
+    compaction:
+      compaction:
+        block_retention: 1440h # 60d
 
-# querier:
-#   frontend_worker:
-#     frontend_address: 127.0.0.1:9096
+backend_worker:
+  compaction:
+    block_retention: 1440h
+  ring:
+    kvstore:
+      store: inmemory
+
+metrics_generator:
+  processor:
+    service_graphs:
+      histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
+      dimensions: ['http.method', 'http.target']
+      enable_virtual_node_label: true
+      peer_attributes: ["peer.service", "db.name", "db.system"]
+  registry:
+    external_labels:
+      source: tempo
+      cluster: docker-compose
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
 
 storage:
   trace:
@@ -36,53 +55,9 @@ storage:
       endpoint: ${TEMPO_BUCKET_ENDPOINT}
       access_key: ${TEMPO_ACCESS_KEY}
       secret_key: ${TEMPO_SECRET_KEY}
-      # insecure: true
+      region: auto
     wal:
-      path: /var/tempo/wal  # where to store the wal locally
-    local:
-      path: /var/tempo/blocks
-
-metrics_generator:
-  processor:
-    service_graphs:
-      histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
-      dimensions: ['http.method', 'http.target']
-      enable_virtual_node_label: true
-      peer_attributes: ["peer.service", "db.name", "db.system"]
-    local_blocks:
-      filter_server_spans: false
-    # span_metrics:
-    #   dimensions:
-    #     - service_name
-    #     - operation
-    #     - status_code
-    #     - http_method
-    #     - service.name
-    #     - span.kind
-    #     - http.method
-  traces_storage:
-    path: /var/tempo/generator/traces
-  storage:
-    path: /var/tempo/generator/wal
-    remote_write:
-      - url: http://prometheus:9090/api/v1/write
-        send_exemplars: true
-  registry:
-    external_labels:
-      source: tempo
-      cluster: docker-compose
-
-overrides:
-  metrics_generator_processors: [service-graphs, local-blocks] # span-metrics
-  # metrics_generate_native_histograms: both
-
-compactor:
-  compaction:
-    block_retention: 1440h
-    compacted_block_retention: 1h
-    compaction_window: 4h
-    max_block_bytes: 5368709120
-    retention_concurrency: 10
+      path: /var/tempo/wal # persisted by the tempo-data volume
 
 query_frontend:
   search:
@@ -90,8 +65,15 @@ query_frontend:
     throughput_bytes_slo: 1.073741824e+09
     max_duration: 168h
   trace_by_id:
-    duration_slo: 69s
+    duration_slo: 60s
   metrics:
     max_duration: 336h
     max_exemplars: 100000
 
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs]
+
+usage_report:
+  reporting_enabled: false
