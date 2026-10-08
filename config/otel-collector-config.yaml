@@ -159,12 +159,12 @@ exporters:
     headers:
       Authorization: "Bearer ${OLLY_API_KEY}"
 
-  otlp_grpc/dash0:
-    auth:
-      authenticator: bearertokenauth/dash0
-    endpoint: ingress.us-west-2.aws.dash0.com:4317
-    headers:
-      Dash0-Dataset: default
+  # otlp_grpc/dash0:
+  #   auth:
+  #     authenticator: bearertokenauth/dash0
+  #   endpoint: ingress.us-west-2.aws.dash0.com:4317
+  #   headers:
+  #     Dash0-Dataset: default
 
   prometheus:
     endpoint: 0.0.0.0:8889
