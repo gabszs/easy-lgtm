@@ -208,11 +208,6 @@ service:
       processors: [probabilistic_sampler, batch]
       exporters: [otlp_http/ollygarden]
 
-    traces/dash0:
-      receivers: [forward]
-      processors: [probabilistic_sampler/dash0, batch]
-      exporters: [otlp_grpc/dash0]
-
     logs:
       receivers: [otlp]
       processors: [batch]
@@ -222,11 +217,6 @@ service:
       receivers: [forward]
       processors: [probabilistic_sampler, batch]
       exporters: [otlp_http/ollygarden]
-
-    logs/dash0:
-      receivers: [forward]
-      processors: [probabilistic_sampler/dash0, batch]
-      exporters: [otlp_grpc/dash0]
 
     metrics:
       receivers: [otlp]
